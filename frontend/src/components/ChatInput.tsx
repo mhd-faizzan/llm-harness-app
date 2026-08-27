@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import { ArrowUp } from "lucide-react";
 
@@ -9,6 +9,14 @@ interface ChatInputProps {
 
 export function ChatInput({ onSend, disabled }: ChatInputProps) {
   const [value, setValue] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useLayoutEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
+  }, [value]);
 
   const handleSend = () => {
     if (!value.trim() || disabled) return;
@@ -26,13 +34,19 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
   return (
     <div className="chat-input">
       <textarea
+        ref={textareaRef}
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="ask anything, grounded in real tools"
+        placeholder="Ask anything…"
         rows={1}
       />
-      <button onClick={handleSend} disabled={disabled || !value.trim()}>
+      <button
+        className="chat-input-send"
+        onClick={handleSend}
+        disabled={disabled || !value.trim()}
+        aria-label="Send message"
+      >
         <ArrowUp size={16} />
       </button>
     </div>

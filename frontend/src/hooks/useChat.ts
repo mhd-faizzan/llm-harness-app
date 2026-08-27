@@ -31,37 +31,58 @@ export function useChat() {
     setMessages((prev) => [...prev, userMessage, assistantMessage]);
     setIsStreaming(true);
 
-    const res = await fetch(`${API_URL}/chat/${conversationId.current}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: text }),
-    });
+    try {
+      const res = await fetch(`${API_URL}/chat/${conversationId.current}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text }),
+      });
 
-    const reader = res.body?.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-
-    if (!reader) {
-      setIsStreaming(false);
-      return;
-    }
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split("\n\n");
-      buffer = lines.pop() ?? "";
-
-      for (const line of lines) {
-        if (!line.startsWith("data: ")) continue;
-        const event: StreamEvent = JSON.parse(line.slice(6));
-        applyEvent(assistantId, event, setMessages);
+      if (!res.ok || !res.body) {
+        throw new Error(`request failed (${res.status})`);
       }
-    }
 
-    setIsStreaming(false);
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const event: StreamEvent = JSON.parse(line.slice(6));
+          applyEvent(assistantId, event, setMessages);
+        }
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "something went wrong";
+      applyEvent(
+        assistantId,
+        { type: "error", message },
+        setMessages
+      );
+    } finally {
+      // never leave tool traces spinning if the stream ended early
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === assistantId
+            ? {
+                ...msg,
+                toolCalls: msg.toolCalls.map((tc) =>
+                  tc.status === "running" ? { ...tc, status: "done" as const } : tc
+                ),
+              }
+            : msg
+        )
+      );
+      setIsStreaming(false);
+    }
   }, []);
 
   return { messages, sendMessage, isStreaming };
@@ -103,6 +124,11 @@ function applyEvent(
 
       if (event.type === "final") {
         return { ...msg, content: event.content };
+      }
+
+      if (event.type === "error") {
+        const prefix = msg.content ? `${msg.content}\n\n` : "";
+        return { ...msg, content: `${prefix}⚠ ${event.message}` };
       }
 
       return msg;

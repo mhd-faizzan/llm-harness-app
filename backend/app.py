@@ -45,11 +45,15 @@ async def chat(conversation_id: str, body: dict):
             await session.commit()
 
             final_content = ""
-            async for event in run_harness(user_message, []):
-                if event["type"] == "final":
-                    final_content = event["content"]
+            try:
+                async for event in run_harness(user_message, []):
+                    if event["type"] == "final":
+                        final_content = event["content"]
 
-                yield f"data: {json.dumps(event)}\n\n"
+                    yield f"data: {json.dumps(event)}\n\n"
+            except Exception as e:
+                final_content = f"[server error: {e}]"
+                yield f"data: {json.dumps({'type': 'final', 'content': final_content})}\n\n"
 
             session.add(Message(conversation_id=conversation_id, role="assistant", content=final_content))
             await session.commit()
