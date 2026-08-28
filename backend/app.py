@@ -39,6 +39,26 @@ async def list_conversations():
         return [{"id": c.id, "title": c.title, "created_at": c.created_at.isoformat()} for c in conversations]
 
 
+@app.get("/conversations/{conversation_id}/messages")
+async def list_messages(conversation_id: str):
+    async with async_session() as session:
+        result = await session.execute(
+            select(Message)
+            .where(Message.conversation_id == conversation_id)
+            .order_by(Message.created_at)
+        )
+        messages = result.scalars().all()
+        return [
+            {
+                "id": m.id,
+                "role": m.role,
+                "content": m.content,
+                "created_at": m.created_at.isoformat(),
+            }
+            for m in messages
+        ]
+
+
 @app.post("/chat/{conversation_id}")
 async def chat(conversation_id: str, body: dict):
     user_message = body["message"]
@@ -47,7 +67,8 @@ async def chat(conversation_id: str, body: dict):
         async with async_session() as session:
             exists = await session.get(Conversation, conversation_id)
             if not exists:
-                session.add(Conversation(id=conversation_id))
+                title = user_message.strip().splitlines()[0][:60] or "New Chat"
+                session.add(Conversation(id=conversation_id, title=title))
                 await session.commit()
 
             session.add(Message(conversation_id=conversation_id, role="user", content=user_message))

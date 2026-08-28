@@ -12,6 +12,26 @@ export function useChat() {
   const [isStreaming, setIsStreaming] = useState(false);
   const conversationId = useRef(makeId());
 
+  const newConversation = useCallback(() => {
+    conversationId.current = makeId();
+    setMessages([]);
+  }, []);
+
+  const loadConversation = useCallback(async (id: string) => {
+    conversationId.current = id;
+    const res = await fetch(`${API_URL}/conversations/${id}/messages`);
+    if (!res.ok) throw new Error(`request failed (${res.status})`);
+    const rows: { id: string; role: string; content: string }[] = await res.json();
+    setMessages(
+      rows.map((row) => ({
+        id: row.id,
+        role: row.role === "user" ? "user" : "assistant",
+        content: row.content,
+        toolCalls: [],
+      }))
+    );
+  }, []);
+
   const sendMessage = useCallback(async (text: string) => {
     const userMessage: ChatMessage = {
       id: makeId(),
@@ -85,7 +105,7 @@ export function useChat() {
     }
   }, []);
 
-  return { messages, sendMessage, isStreaming };
+  return { messages, sendMessage, isStreaming, newConversation, loadConversation };
 }
 
 function applyEvent(
