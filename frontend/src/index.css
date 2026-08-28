@@ -328,7 +328,7 @@ textarea {
 }
 
 .message-content {
-  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .message-user .message-content {
@@ -439,22 +439,48 @@ textarea {
   margin: 16px 0;
 }
 
-.markdown table {
-  display: block;
-  width: max-content;
-  max-width: 100%;
-  overflow-x: auto;
-  border-collapse: collapse;
+.md-table-wrap {
   margin: 0 0 12px;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.md-table-wrap::-webkit-scrollbar {
+  height: 8px;
+}
+
+.md-table-wrap::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 999px;
+}
+
+.markdown table {
+  border-collapse: collapse;
+  width: max-content;
+  min-width: 100%;
   font-size: 0.92em;
+  line-height: 1.55;
 }
 
 .markdown th,
 .markdown td {
-  border: 1px solid var(--border);
-  padding: 7px 11px;
+  padding: 10px 14px;
   text-align: left;
   vertical-align: top;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  max-width: 42ch;
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+
+.markdown tr > *:last-child {
+  border-right: none;
+}
+
+.markdown tbody tr:last-child > * {
+  border-bottom: none;
 }
 
 .markdown th {
