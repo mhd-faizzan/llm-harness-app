@@ -1,16 +1,18 @@
-import { Search, Calculator, Type, Check, Loader2 } from "lucide-react";
+import { Search, Calculator, Type, Clock, Check, Loader2 } from "lucide-react";
 import type { ToolCall } from "../types";
 
 const ICONS: Record<string, typeof Search> = {
   web_search: Search,
   calculate: Calculator,
   count_letter: Type,
+  get_current_time: Clock,
 };
 
 const LABELS: Record<string, string> = {
   web_search: "searching web",
   calculate: "calculating",
   count_letter: "counting letters",
+  get_current_time: "checking the time",
 };
 
 export function ToolTrace({ toolCall }: { toolCall: ToolCall }) {

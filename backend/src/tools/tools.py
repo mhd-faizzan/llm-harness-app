@@ -1,6 +1,8 @@
 import ast
 import operator
 import logging
+from datetime import datetime
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from ddgs import DDGS
 
@@ -46,6 +48,16 @@ def count_letter(word: str, letter: str) -> str:
     return f"'{letter}' appears {count} time(s) in '{word}'"
 
 
+def get_current_time(timezone: str = "UTC") -> str:
+    try:
+        tz = ZoneInfo(timezone)
+    except (ZoneInfoNotFoundError, ValueError):
+        return f"unknown timezone: '{timezone}'. Use an IANA name like 'Europe/Berlin' or 'UTC'."
+
+    now = datetime.now(tz)
+    return now.strftime(f"%Y-%m-%d %H:%M:%S %Z (UTC%z), %A") + f" [{timezone}]"
+
+
 def web_search(query: str) -> str:
     try:
         results = DDGS().text(query, max_results=3)
@@ -88,6 +100,23 @@ TOOL_SCHEMAS = [
     {
         "type": "function",
         "function": {
+            "name": "get_current_time",
+            "description": "Get the current date and time in a given timezone. Use this for any 'what time is it' or 'current date' question.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "timezone": {
+                        "type": "string",
+                        "description": "IANA timezone name, e.g. 'Europe/Berlin', 'America/New_York', 'UTC'. Defaults to UTC.",
+                    }
+                },
+                "required": [],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "web_search",
             "description": "Search the web for current, real-time info.",
             "parameters": {
@@ -102,5 +131,6 @@ TOOL_SCHEMAS = [
 TOOL_DISPATCH = {
     "calculate": calculate,
     "count_letter": count_letter,
+    "get_current_time": get_current_time,
     "web_search": web_search,
 }

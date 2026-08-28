@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from contextlib import asynccontextmanager
+from sqlalchemy import select
 
 from src.db.database import init_db, async_session
 from src.db.models import Conversation, Message
@@ -30,6 +31,14 @@ async def health():
     return {"status": "ok"}
 
 
+@app.get("/conversations")
+async def list_conversations():
+    async with async_session() as session:
+        result = await session.execute(select(Conversation).order_by(Conversation.created_at.desc()))
+        conversations = result.scalars().all()
+        return [{"id": c.id, "title": c.title, "created_at": c.created_at.isoformat()} for c in conversations]
+
+
 @app.post("/chat/{conversation_id}")
 async def chat(conversation_id: str, body: dict):
     user_message = body["message"]
@@ -45,11 +54,15 @@ async def chat(conversation_id: str, body: dict):
             await session.commit()
 
             final_content = ""
-            async for event in run_harness(user_message, []):
-                if event["type"] == "final":
-                    final_content = event["content"]
+            try:
+                async for event in run_harness(user_message, []):
+                    if event["type"] == "final":
+                        final_content = event["content"]
 
-                yield f"data: {json.dumps(event)}\n\n"
+                    yield f"data: {json.dumps(event)}\n\n"
+            except Exception as e:
+                final_content = f"[server error: {e}]"
+                yield f"data: {json.dumps({'type': 'final', 'content': final_content})}\n\n"
 
             session.add(Message(conversation_id=conversation_id, role="assistant", content=final_content))
             await session.commit()

@@ -19,4 +19,5 @@ export type StreamEvent =
   | { type: "content"; text: string }
   | { type: "tool_start"; name: string; args: Record<string, unknown> }
   | { type: "tool_result"; name: string; result: string }
-  | { type: "final"; content: string };
+  | { type: "final"; content: string }
+  | { type: "error"; message: string };
