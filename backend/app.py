@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from contextlib import asynccontextmanager
+from sqlalchemy import select
 
 from src.db.database import init_db, async_session
 from src.db.models import Conversation, Message
@@ -28,6 +29,14 @@ app.add_middleware(
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+
+@app.get("/conversations")
+async def list_conversations():
+    async with async_session() as session:
+        result = await session.execute(select(Conversation).order_by(Conversation.created_at.desc()))
+        conversations = result.scalars().all()
+        return [{"id": c.id, "title": c.title, "created_at": c.created_at.isoformat()} for c in conversations]
 
 
 @app.post("/chat/{conversation_id}")
