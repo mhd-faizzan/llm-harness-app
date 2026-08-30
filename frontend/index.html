@@ -3,20 +3,29 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>harness</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta name="color-scheme" content="dark light" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <title>Harness</title>
     <script>
+      // Set the theme before first paint to avoid a flash.
+      // Dark is the default experience; light only when explicitly chosen.
       (function () {
         try {
           var stored = localStorage.getItem("harness-theme");
-          var theme =
-            stored === "light" || stored === "dark"
-              ? stored
-              : window.matchMedia("(prefers-color-scheme: dark)").matches
-              ? "dark"
-              : "light";
+          var theme = stored === "light" || stored === "dark" ? stored : "dark";
           document.documentElement.setAttribute("data-theme", theme);
-        } catch (e) {}
+        } catch (e) {
+          document.documentElement.setAttribute("data-theme", "dark");
+        }
       })();
     </script>
   </head>

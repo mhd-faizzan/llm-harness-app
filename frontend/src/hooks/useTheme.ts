@@ -6,12 +6,10 @@ const STORAGE_KEY = "harness-theme";
 
 function getInitialTheme(): Theme {
   if (typeof window === "undefined") return "dark";
-
   const stored = window.localStorage.getItem(STORAGE_KEY);
   if (stored === "light" || stored === "dark") return stored;
-
-  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  return prefersDark ? "dark" : "light";
+  // Dark is the default experience (DESIGN.md §10).
+  return "dark";
 }
 
 export function useTheme() {
@@ -19,7 +17,11 @@ export function useTheme() {
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
-    window.localStorage.setItem(STORAGE_KEY, theme);
+    try {
+      window.localStorage.setItem(STORAGE_KEY, theme);
+    } catch {
+      // ignore persistence failures
+    }
   }, [theme]);
 
   const toggleTheme = useCallback(() => {

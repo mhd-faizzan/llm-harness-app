@@ -1,32 +1,51 @@
-# React + TypeScript + Vite
+# Frontend — LLM Harness Chat
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A Claude/ChatGPT-style chat UI for the harness backend. Built to the spec in
+`../DESIGN.md`.
 
-Currently, two official plugins are available:
+**Stack:** React 19 · TypeScript (strict) · Vite · Tailwind CSS 4 · Radix UI
+(`@radix-ui/react-dropdown-menu`) · react-markdown + remark-gfm + rehype-highlight
+· lucide-react
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Scripts
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm run dev      # dev server on http://localhost:5173 (backend must be on :8000)
+npm run build    # tsc -b && vite build
+npm run lint     # oxlint
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Layout
+
+```
+src/
+├── components/
+│   ├── chat/          Sidebar, Header, MessageList, Message, Composer,
+│   │                  ModelSelector, ToolTrace, Markdown, CodeBlock
+│   └── ui/            IconButton (shared primitive, 44px hit target)
+├── hooks/
+│   ├── useChat.ts         streaming turn loop + abort/stop + regenerate
+│   ├── useConversations.ts history list
+│   ├── useAutoScroll.ts    pin-to-bottom while streaming
+│   ├── useSidebar.ts       collapse (desktop) / drawer (mobile)
+│   └── useTheme.ts         dark default, persisted
+├── lib/
+│   ├── models.ts     selectable models (sent with each request)
+│   ├── time.ts       Today / Yesterday / Previous 7 days … grouping
+│   ├── titles.ts     client-side conversation title overrides
+│   └── utils.ts      cn() class merge
+└── types/chat.ts     discriminated-union StreamEvent + message contracts
+```
+
+## Notes
+
+- **Dark mode is the default.** Theme is stored in `localStorage` under
+  `harness-theme` and applied before first paint by an inline script in
+  `index.html`.
+- The **model selector** is wired through to the request body (`{ message, model }`);
+  the backend currently pins its own Groq model, so it is a forward-compatible
+  no-op server-side today.
+- **Inline title editing** (double-click the header title) persists locally only —
+  the backend has no rename endpoint yet.
+- Attachments/drag-and-drop from the DESIGN spec are stubbed (disabled button)
+  pending a backend upload endpoint.
